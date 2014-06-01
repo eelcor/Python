@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="starter-template">
+	<h1>Cliënten<small> Zoeken, Raadplegen en Aanpassen</small></h1>
+    <hr>
+</div>
+<div class="row">
+    <div class="col-md-5" style="padding: 15px;">
+        <div class="row">
+            <H2>Acties</H2>
+            <form class="form" role="form" action="{{ url_for('test') }}" method="post">
+                <H3>Bestaande client zoeken</H3>
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="query" placeholder="Wie zoek je?">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn-primary form-control">Zoek</button>
+                </div>
+            </form>
+        </div>
+        <hr>
+        <div class="row">
+            <form class="form" role="form" action="{{ url_for('test') }}" method="post">
+                <H3>Nieuwe client aanmaken</H3>                
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="newvoornaam" placeholder="Voornaam">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="newtussen" placeholder="Tussen">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="newachternaam" placeholder="Achternaam">
+                </div>
+                <div class="col-md-5">
+                    <button type="submit" class="btn-primary form-control">Maak nieuw</button>
+                </div>        
+            </form>
+        </div>
+        {{ post_result }}
+    </div>
+    <div class="col-md-6" style="padding: 15px;">
+    <div class="row">
+    {% if mode=='new_detail' %}
+        <H2>Clientdetails</H1>
+        <hr>
+        <form class="form" role="form" action="{{ url_for('test') }}" method="post">
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="voornaam" placeholder="Voornaam">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="tussen" placeholder="Tussen">
+            </div>
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="achternaam" placeholder="Achternaam">
+            </div>
+            <br>
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="adres" placeholder="Adres">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" name="postcode" placeholder="Postcode">
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="plaats" placeholder="Woonplaats">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn-primary form-control">Voeg toe</button>
+            </div>
+        </form>
+    {% endif %}
+    {% if mode == 'zoek' %}
+        <H2>Zoekresultaten</H2>
+        <div class="list-group">
+            {% if search_result==[] %}
+                <a href="#" class="list-group-item">
+                    <h4 class="list-group-item-heading">Geen zoekresultaten</h4>
+                    <p class="list-group-item-text">Uw zoekactie heeft geen resultaten opgeleverd</p>
+                </a>
+            {% else %}
+            {% for person in search_result %}
+                <a href="#" class="list-group-item">
+                    <h4 class="list-group-item-heading">{{ person.voornaam }} {{ person.achternaam }}</h4>
+                    <p class="list-group-item-text">{{ person.plaats }}</p>
+                </a>
+            {% endfor %}
+            {% endif %}
+        <div>
+    {% endif %}        
+    </div>
+    </div>
+</div>
+{% endblock %}
+

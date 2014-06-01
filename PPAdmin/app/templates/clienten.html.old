@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="starter-template">
+	<h1>Cliënten<small> Overzicht van alle cliënten</small></h1>
+    <hr>
+</div>
+<div class="row">
+    <div class="col-md-5">
+        <H2>Wat wil je doen?</H1>
+        <a href="{{ url_for('index') }}" class="btn btn-lg btn-default btn-block">Nieuwe client aanmaken</a>
+        <a href="{{ url_for('clienten') }}" class="btn btn-lg btn-default btn-block">Bestaande client bewerken</a>
+        <a href="{{ url_for('clienten') }}" class="btn btn-lg btn-default btn-block">Afspraak inboeken</a>
+    </div>
+    <div class="col-md-5">
+        <H2>Recente clientactiviteiten</H1>
+        Test kolom 2
+    </div>
+</div>
+{% endblock %}
+

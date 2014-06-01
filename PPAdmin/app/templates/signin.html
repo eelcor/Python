@@ -1,0 +1,15 @@
+{% extends "bare_layout.html" %}
+{% block content %}
+<div class="container">
+	<form class="form-signin" role="form" action="{{ url_for('signin') }}", method="post">
+		<h2 class="form-signin-heading">Inloggen</h2>
+		<input type="username" name="loginuser" class="form-control" placeholder="Gebruikersnaam" required autofocus>
+		<input type="password" name="loginpass" class="form-control" placeholder="Wachtwoord" required>
+		<label class="checkbox">
+			<input type="checkbox" value="Onthoud mij"> Onthoud mij
+		</label>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Log in</button>
+	</form>
+</div>
+{% endblock %}
+
