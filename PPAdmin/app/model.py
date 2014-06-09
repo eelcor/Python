@@ -37,7 +37,12 @@ class AnnotatieTag(db.Model):
     __tablename__ = 'annotatietag'
     annotatie_id = db.Column(db.Integer, db.ForeignKey('annotatie.id'), primary_key=True)
     tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'),primary_key=True)
-    
+
+class PersoonFormulier(db.Model):
+    __tablename__ = 'persoonformulier'
+    formulier_id = db.Column(db.Integer, db.ForeignKey('formulier.id'), primary_key=True)
+    persoon_id = db.Column(db.Integer, db.ForeignKey('persoon.id'), primary_key=True)
+
 #==============================================================================
 # Authorization block
 #==============================================================================
@@ -138,7 +143,8 @@ class Persoon(Object):
     verloopt = db.Column(db.DateTime)
     type = db.Column(db.String)
     annotaties = db.relationship('Annotatie',secondary='persoonannotatie',backref='annotaties')    
-
+    formulieren = db.relationship('Formulier',secondary='persoonformulier', backref='formpers')
+    
     __mapper_args__ = {
         'polymorphic_identity':'persoon',
         'polymorphic_on':'type'}
@@ -243,11 +249,20 @@ class Formulier(Object):
     aangemaakt = db.Column(db.DateTime)
     gewijzigd = db.Column(db.DateTime)
     type = db.Column(db.String)
+    personen = db.relationship('Persoon', secondary='persoonformulier', backref='formpersonen')
 
     __mapper_args__ = {
         'polymorphic_identity':'formulier',
         'polymorphic_on':'type'}
+
+class Verwijsbrief(Formulier):
+    __tablename__ = "verwijsbrief"
+    id = db.Column(db.Integer, db.ForeignKey('formulier.id'), primary_key=True) 
+    soort = db.Column(db.String)
     
+    __mapper_args__ = {
+        'polymorphic_identity':'verwijsbrief'
+        }
 
 def init_db():
     db.create_all()
