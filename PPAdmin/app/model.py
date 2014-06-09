@@ -19,6 +19,21 @@ engine = create_engine('sqlite:///ppadmin.db',echo=True)
 Base = declarative_base()
 """
 
+#==============================================================================
+# Dit zijn de verschillende kruistabellen om gegevens aan elkaar te linken
+#==============================================================================
+
+clientverzorger = db.Table('clientverzorger', db.Model.metadata, db.Column('client_id', db.Integer, db.ForeignKey('client.id')), db.Column('verzorger_id', db.Integer, db.ForeignKey('verzorger.id')))
+clientbehandelaar = db.Table('clientbehandelaar', db.Model.metadata, db.Column('client_id', db.Integer, db.ForeignKey('client.id')), db.Column('behandelaar_id', db.Integer, db.ForeignKey('behandelaar.id')))
+clientoverig = db.Table('clientoverig', db.Model.metadata, db.Column('client_id', db.Integer, db.ForeignKey('client.id')), db.Column('overig_id', db.Integer, db.ForeignKey('overig.id')))
+persoonannotatie = db.Table('persoonannotatie', db.Model.metadata, db.Column('persoon_id', db.Integer, db.ForeignKey('persoon.id')), db.Column('annotatie_id', db.Integer, db.ForeignKey('annotatie.id')))
+gebruikerpersoon = db.Table('gebruikerpersoon', db.Model.metadata, db.Column('gebruiker_id', db.Integer, db.ForeignKey('gebruiker.id')), db.Column('persoon_id', db.Integer, db.ForeignKey('persoon.id')))
+
+
+#==============================================================================
+# De gebruikers van het systeem
+#==============================================================================
+
 class Gebruiker(db.Model):
     __tablename__ = 'gebruiker'
     id = db.Column(db.Integer, primary_key=True)
@@ -28,7 +43,7 @@ class Gebruiker(db.Model):
     toegevoegd = db.Column(db.DateTime)
     gewijzigd = db.Column(db.DateTime)
     verloopt = db.Column(db.DateTime)
-    rollen = db.relationship("Autorisatiematrix", backref='gebruiker')
+    profielen = db.relationship('Persoon',secondary=gebruikerpersoon,backref='profiel')    
 
     def __init__(self,user,password):
         self.user = user
@@ -57,6 +72,10 @@ class Gebruiker(db.Model):
     def __repr__(self):
         return('Usernaam %r' % self.user)    
 
+#==============================================================================
+# De basisklasse persoon
+#==============================================================================
+
 class Persoon(db.Model):
     __tablename__ = 'persoon'
     id = db.Column(db.Integer, primary_key=True)
@@ -72,55 +91,98 @@ class Persoon(db.Model):
     toegevoegd = db.Column(db.DateTime)
     gewijzigd = db.Column(db.DateTime)
     verloopt = db.Column(db.DateTime)
+    type = db.Column(db.String)
+    annotaties = db.relationship('Annotatie',secondary='persoonannotatie',backref='annotaties')    
+
+    __mapper_args__ = {
+        'polymorphic_identity':'persoon',
+        'polymorphic_on':'type'}
     
-    def __init__(self, voornaam, tussenvoegsel, achternaam):
-        self.voornaam = voornaam
-        self.tussenvoegsel = tussenvoegsel
-        self.achternaam = achternaam
-        self.actief = True
-        self.toegevoegd = datetime.datetime.now()
-        self.gewijzigd = datetime.datetime.now()
+#    def __init__(self, voornaam, tussenvoegsel, achternaam):
+#        self.voornaam = voornaam
+#        self.tussenvoegsel = tussenvoegsel
+#        self.achternaam = achternaam
+#        self.actief = True
+#        self.toegevoegd = datetime.datetime.now()
+#        self.gewijzigd = datetime.datetime.now()
     
     def __repr__(self):
         return('Persoon: %r' % self.achternaam)
-    
-class Autorisatie(db.Model):
-    __tablename__= 'autorisatie'
-    id = db.Column(db.Integer,primary_key=True)
-    description = db.Column(db.String)
-    item = db.Column(db.String)
-    
-    def __init__(self,item):
-        self.item = item
 
-class Journaalitem(db.Model):
-     __tablename__ = 'journaalitem'
-     id = db.Column(db.Integer,primary_key=True)
-     geplaatst = db.Column(db.DateTime)
-     verslagdatum = db.Column(db.DateTime)
-     extra_titel = db.Column(db.String)
-     body = db.Column(db.String)
-     auteur_id = db.Column(db.Integer, db.ForeignKey('gebruiker.id'))
-     client_id = db.Column(db.Integer, db.ForeignKey('persoon.id'))
-     auteurs = db.relationship("Gebruiker", backref='journaalitem')
-     clienten = db.relationship("Persoon", backref='journaalitem')
-     
-     def __init__(self,body,verslagdatum):
-         self.body = body
-         self.verslagdatum = verslagdatum
-         self.geplaatst = datetime.datetime.now()
+#==============================================================================
+# De vier "personages" die in het systeem gezet kunnen worden
+#==============================================================================
 
-class Autorisatiematrix(db.Model):
-    __tablename__ = 'autorisatiematrix'
-    gebruiker_id = db.Column(db.Integer,db.ForeignKey('gebruiker.id'), primary_key=True)
-    autorisatie_id = db.Column(db.Integer,db.ForeignKey('autorisatie.id'),primary_key=True)
-    verloopt = db.Column(db.DateTime)
-    autorisatie = db.relationship("Autorisatie", backref="autorisatiematrix")
+class Verzorger(Persoon):
+    __tablename__ = "verzorger"
+    id = db.Column(db.Integer, db.ForeignKey('persoon.id'), primary_key=True)
+    Rol = db.Column(db.String)
     
-class Gebruikermatrix(db.Model):
-    __tablename__ = 'gebruikermatrix'
-    persoon_id = db.Column(db.Integer,db.ForeignKey('gebruiker.id'), primary_key=True)
-    gebruiker_id = db.Column(db.Integer,db.ForeignKey('persoon.id'), primary_key=True)
-    verloopt = db.Column(db.DateTime)
-    gebruiker = db.relationship("Gebruiker",backref="gebruikermatrix",uselist=False)
+    __mapper_args__ = {
+        'polymorphic_identity':'verzorger'
+    }
 
+class Behandelaar(Persoon):
+    __tablename__ = "behandelaar"
+    id = db.Column(db.Integer, db.ForeignKey('persoon.id'), primary_key=True)
+    Rol = db.Column(db.String)
+    Organisatie = db.Column(db.String)
+    OrgEmail = db.Column(db.String)
+    OrgTelefoon = db.Column(db.String)
+    OrgAdres = db.Column(db.String)
+    OrgPlaats = db.Column(db.String)
+    OrgPostcode = db.Column(db.String)
+    
+    __mapper_args__ = {
+        'polymorphic_identity':'behandelaar'    
+    }
+
+class Overig(Persoon):
+    __tablename__ = "overig"
+    id = db.Column(db.Integer, db.ForeignKey('persoon.id'), primary_key=True)
+    Rol = db.Column(db.String)
+    
+    __mapper_args__ = {
+        'polymorphic_identity':'overig'
+    }
+
+class Client(Persoon):
+    __tablename__ = "client"
+    id = db.Column(db.Integer, db.ForeignKey('persoon.id'), primary_key=True)
+    GeboorteDatum = db.Column(db.Date)
+    verzorgers = db.relationship('Verzorger', secondary=clientverzorger, backref='clienten')
+    behandelaars = db.relationship('Behandelaar', secondary=clientbehandelaar, backref='clienten')
+    
+    __mapper_args__ = {
+        'polymorphic_identity':'client'    
+    }
+
+#==============================================================================
+# Opmerkingen, die bij de personen kunnen worden toegevoegd
+#==============================================================================
+
+class Annotatie(db.Model):
+    __tablename__ = "annotatie"
+    id = db.Column(db.Integer, primary_key=True)
+    Onderwerp = db.Column(db.String)
+    Body = db.Column(db.String)
+    DateAdded = db.Column(db.DateTime)
+    DateModified = db.Column(db.DateTime)
+    gebruiker_id = db.Column(db.Integer, db.ForeignKey('gebruiker.id'))
+    tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'))
+    
+    def __init__(self, Onderwerp, Body):
+        self.Onderwerp = Onderwerp
+        self.Body = Body
+        self.DateAdded = datetime.datetime.now()
+    
+class Tag(db.Model):
+    __tablename__ = "tag"
+    id = db.Column(db.Integer, primary_key=True)
+    TagName = db.Column(db.String)
+    
+    def __init__(self, TagName):
+        self.TagName = TagName
+
+def init_db():
+    db.create_all()

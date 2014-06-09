@@ -11,7 +11,7 @@ from flask.ext.login import LoginManager
 
 app = Flask(__name__)
 app.config['DEBUG']=True
-app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///ppadmin.db'
+app.config['SQLALCHEMY_DATABASE_URI']="sqlite:///ppadmin.db?check_same_thread=False"
 app.config['SECRET_KEY']='eelcos secret key'
 db = SQLAlchemy(app)
 lm = LoginManager()
@@ -19,5 +19,4 @@ lm.init_app(app)
 lm.login_view = 'signin'
 
 from app import views, model
-
 

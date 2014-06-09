@@ -80,7 +80,7 @@ def clienten():
         post_result = match_voornaam
         return render_template('clienten.html', navbar=navbar, active='clienten', user=naam, post_result=post_result, mode='zoek',search_result=search_result)
     if 'newvoornaam'in post_result:
-        temp = model.Persoon(post_result['newvoornaam'],post_result['newtussen'],post_result['newachternaam'])
+        temp = model.Client(voornaam=post_result['newvoornaam'],tussenvoegsel=post_result['newtussen'],achternaam=post_result['newachternaam'])
         db.session.add(temp)
         db.session.commit()
         return render_template('clienten.html', navbar=navbar, active='clienten', user=naam, post_result=post_result, mode='new_detail')
