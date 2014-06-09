@@ -29,7 +29,50 @@ clientoverig = db.Table('clientoverig', db.Model.metadata, db.Column('client_id'
 persoonannotatie = db.Table('persoonannotatie', db.Model.metadata, db.Column('persoon_id', db.Integer, db.ForeignKey('persoon.id')), db.Column('annotatie_id', db.Integer, db.ForeignKey('annotatie.id')))
 gebruikerpersoon = db.Table('gebruikerpersoon', db.Model.metadata, db.Column('gebruiker_id', db.Integer, db.ForeignKey('gebruiker.id')), db.Column('persoon_id', db.Integer, db.ForeignKey('persoon.id')))
 
+#==============================================================================
+# Dit zijn kruistabellen als klassen
+#==============================================================================
 
+class AnnotatieTag(db.Model):
+    __tablename__ = 'annotatietag'
+    annotatie_id = db.Column(db.Integer, db.ForeignKey('annotatie.id'), primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'),primary_key=True)
+    
+#==============================================================================
+# Authorization block
+#==============================================================================
+
+class AutorisatieLezen(db.Model):
+    __tablename__= 'autorisatielezen'
+    lezer_id = db.Column(db.Integer, db.ForeignKey('gebruiker.id'), primary_key=True)
+    object_id = db.Column(db.Integer, db.ForeignKey('object.id'), primary_key=True)
+
+class AutorisatieSchrijven(db.Model):
+    __tablename__='autorisatieschrijven'
+    schrijver_id = db.Column(db.Integer, db.ForeignKey('gebruiker.id'), primary_key=True)
+    object_id = db.Column(db.Integer, db.ForeignKey('object.id'), primary_key=True)
+
+class AutorisatieBeheer(db.Model):
+    __tablename__ = 'autorisatiebeheer'
+    beheerder_id = db.Column(db.Integer, db.ForeignKey('gebruiker.id'), primary_key=True)
+    object_id = db.Column(db.Integer, db.ForeignKey('object.id'), primary_key=True)
+
+class Object(db.Model):
+    __tablename__='object'
+    id = db.Column(db.Integer, primary_key=True)
+    lezers = db.relationship('Gebruiker', secondary='autorisatielezen', backref='objlezers')
+    schrijvers = db.relationship('Gebruiker', secondary='autorisatieschrijven', backref='objschrijvers')
+    beheerders = db.relationship('Gebruiker', secondary='autorisatiebeheer', backref='objbeheerders')
+
+    def check_autorisaties(self,Gebruiker):
+        autorisaties = []
+        if Gebruiker in self.beheerders:
+            autorisaties.append('beheer')
+        if Gebruiker in self.schrijvers:
+            autorisaties.append('schrijven')
+        if Gebruiker in self.lezers:
+            autorisaties.append('lezen')
+        return autorisaties
 #==============================================================================
 # De gebruikers van het systeem
 #==============================================================================
@@ -39,6 +82,7 @@ class Gebruiker(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user = db.Column(db.String)
     pwdhash = db.Column(db.String)
+    beheerder = db.Column(db.Boolean)
     email = db.Column(db.String)
     toegevoegd = db.Column(db.DateTime)
     gewijzigd = db.Column(db.DateTime)
@@ -76,15 +120,16 @@ class Gebruiker(db.Model):
 # De basisklasse persoon
 #==============================================================================
 
-class Persoon(db.Model):
+class Persoon(Object):
     __tablename__ = 'persoon'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('object.id'), primary_key=True)
     voornaam = db.Column(db.String)
     tussenvoegsel = db.Column(db.String)
     achternaam = db.Column(db.String)
     adres = db.Column(db.String)
     woonplaats = db.Column(db.String)
     land = db.Column(db.String)
+    bsn = db.Column(db.String)
     rekeningnummer = db.Column(db.String)
     actief = db.Column(db.Boolean)
     volledig = db.Column(db.Boolean)
@@ -161,28 +206,48 @@ class Client(Persoon):
 # Opmerkingen, die bij de personen kunnen worden toegevoegd
 #==============================================================================
 
-class Annotatie(db.Model):
+class Annotatie(Object):
     __tablename__ = "annotatie"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('object.id'), primary_key=True)
     Onderwerp = db.Column(db.String)
     Body = db.Column(db.String)
     DateAdded = db.Column(db.DateTime)
     DateModified = db.Column(db.DateTime)
     gebruiker_id = db.Column(db.Integer, db.ForeignKey('gebruiker.id'))
-    tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'))
+    gebruikers = db.relationship('Gebruiker',backref='annogebruikers')
+    tags = db.relationship('Tag', secondary='annotatietag', backref='annotag')
     
     def __init__(self, Onderwerp, Body):
         self.Onderwerp = Onderwerp
         self.Body = Body
         self.DateAdded = datetime.datetime.now()
     
-class Tag(db.Model):
+class Tag(Object):
     __tablename__ = "tag"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('object.id'), primary_key=True)
     TagName = db.Column(db.String)
-    
+    annotaties = db.relationship('Annotatie', secondary='annotatietag', backref='tagannotaties')
+
     def __init__(self, TagName):
         self.TagName = TagName
+
+#==============================================================================
+# Standaard formulieren
+#==============================================================================
+
+class Formulier(Object):
+    __tablename__ = "formulier"
+    id = db.Column(db.Integer, db.ForeignKey('object.id'), primary_key=True)
+    soort = db.Column(db.String)
+    opmerking = db.Column(db.String)
+    aangemaakt = db.Column(db.DateTime)
+    gewijzigd = db.Column(db.DateTime)
+    type = db.Column(db.String)
+
+    __mapper_args__ = {
+        'polymorphic_identity':'formulier',
+        'polymorphic_on':'type'}
+    
 
 def init_db():
     db.create_all()
